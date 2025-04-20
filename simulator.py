@@ -10,10 +10,10 @@ class HierarchicalSimulator:
             core_id = core["core_id"]
             for comp in core["components"]:
                 ckey = (core_id, comp["name"])
-                # Store alpha, scheduler, etc.
                 self.comp_params[ckey] = {
                     "alpha": comp["bdr_init"]["alpha"],
-                    "scheduler": comp["scheduler"]
+                    "delay": comp["bdr_init"]["delay"],
+                    "scheduler": comp["scheduler"].upper()
                 }
 
                 tasks_state = []
@@ -24,8 +24,7 @@ class HierarchicalSimulator:
                         "deadline": tinfo["deadline"],
                         "effective_wcet": tinfo["effective_wcet"],
                         "priority": tinfo.get("priority", None),
-                        "scheduler": comp["scheduler"],
-                        "type": tinfo.get("type","hard"),
+                        "type": tinfo.get("type", "hard"),
 
                         "next_release": 0.0,
                         "job": None,
@@ -36,16 +35,21 @@ class HierarchicalSimulator:
                     })
                 self.comp_states[ckey] = tasks_state
 
-    def run_simulation(self, simulation_time=200.0, dt=0.1):
+    def run_simulation(self, simulation_time, dt):
         t = 0.0
         while t < simulation_time:
+            # 1. Job release phase
             for ckey, tasks in self.comp_states.items():
                 for tsk in tasks:
                     if t >= tsk["next_release"]:
                         if tsk["job"] is not None:
+                            job = tsk["job"]
+                            rtime = t - job["release"]
+                            tsk["stats"]["max_resp_time"] = max(tsk["stats"]["max_resp_time"], rtime)
                             tsk["stats"]["missed_deadlines"] += 1
+                            print(f"[DEBUG] ❌ Missed job release for task {tsk['id']} at time {t:.2f} "
+                                  f"(release: {job['release']:.2f}, deadline: {job['deadline']:.2f}, remaining: {job['remaining']:.2f})")
                             tsk["job"] = None
-                        # Create new job
                         tsk["job"] = {
                             "release": t,
                             "remaining": tsk["effective_wcet"],
@@ -53,53 +57,73 @@ class HierarchicalSimulator:
                         }
                         tsk["next_release"] = t + tsk["period"]
 
+            # 2. Core-level component selection and CPU allocation
+            for core in self.system_model["cores"]:
+                core_id = core["core_id"]
+                core_sched = core["scheduler"]
 
-            for ckey, tasks in self.comp_states.items():
-                alpha = self.comp_params[ckey]["alpha"]
-                allocated = alpha * dt
-                ready_tasks = [tsk for tsk in tasks if tsk["job"] is not None]
-                if allocated <= 0 or not ready_tasks:
+                # Collect components with ready jobs
+                ready_comps = []
+                for comp in core["components"]:
+                    ckey = (core_id, comp["name"])
+                    tasks = self.comp_states[ckey]
+                    if any(t["job"] is not None for t in tasks):
+                        ready_comps.append((comp, ckey, tasks))
+
+                if not ready_comps:
                     continue
 
+                # Top-level scheduler: RM or EDF
+                if core_sched == "RM":
+                    ready_comps.sort(key=lambda tup: tup[0].get("priority", float("inf")))
+                elif core_sched == "EDF":
+                    ready_comps.sort(key=lambda tup: min(
+                        (tsk["job"]["deadline"] for tsk in tup[2] if tsk["job"] is not None),
+                        default=float("inf")
+                    ))
 
-                sched = self.comp_params[ckey]["scheduler"].upper()
+                # Pick the top component and allocate budget
+                comp, ckey, tasks = ready_comps[0]
+                alpha = comp["bdr_init"]["alpha"]
+                delay = comp["bdr_init"]["delay"]
+                alloc = (alpha / delay) * dt
+
+                sched = comp["scheduler"].upper()
+                ready_tasks = [t for t in tasks if t["job"] is not None]
                 if sched == "EDF":
                     ready_tasks.sort(key=lambda x: x["job"]["deadline"])
-                elif sched in ["FPS", "RM"]:
+                elif sched in ["RM", "FPS"]:
+                    ready_tasks.sort(key=lambda x: x["priority"] if x["priority"] is not None else float("inf"))
 
-                    ready_tasks.sort(key=lambda x: x["priority"] if x["priority"] is not None else math.inf)
-                else:
-
-                    pass
-
-
-                remain = allocated
+                remaining = alloc
                 for tsk in ready_tasks:
-                    if remain <= 1e-9:
+                    if remaining <= 1e-9:
                         break
                     job = tsk["job"]
-                    amount = min(remain, job["remaining"])
+                    amount = min(remaining, job["remaining"])
                     job["remaining"] -= amount
-                    remain -= amount
+                    remaining -= amount
                     if job["remaining"] <= 1e-9:
-                        # finished
                         rtime = (t + dt) - job["release"]
-                        if rtime > tsk["stats"]["max_resp_time"]:
-                            tsk["stats"]["max_resp_time"] = rtime
+                        print(f"[DEBUG] ✅ Task {tsk['id']} completed at t={t+dt:.2f}, response time: {rtime:.2f}")
+                        tsk["stats"]["max_resp_time"] = max(tsk["stats"]["max_resp_time"], rtime)
                         tsk["job"] = None
 
-
+            # 3. Deadline checks
             for ckey, tasks in self.comp_states.items():
                 for tsk in tasks:
                     job = tsk["job"]
                     if job is not None and t >= job["deadline"]:
-                        # missed
                         tsk["stats"]["missed_deadlines"] += 1
+                        rtime = t - job["release"]
+                        tsk["stats"]["max_resp_time"] = max(tsk["stats"]["max_resp_time"], rtime)
+                        print(f"[DEBUG] ❌ Deadline MISS for {tsk['id']} at time {t:.2f} "
+                              f"(release: {job['release']:.2f}, deadline: {job['deadline']:.2f}, response time: {rtime:.2f})")
                         tsk["job"] = None
 
             t += dt
 
-
+        # 4. Final statistics
         final_stats = {"task_stats": {}}
         for ckey, tasks in self.comp_states.items():
             for tsk in tasks:
