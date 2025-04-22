@@ -14,7 +14,16 @@ DO_WCRT_ANALYSIS = True
 
 def main():
     # TEST_CASE_FOLDER = "test_cases/custom-test_cases/camera_heavy"
-    TEST_CASE_FOLDER = "test_cases/1-tiny-test-case"
+    #TEST_CASE_FOLDER = "test_cases/1-tiny-test-case"
+    # TEST_CASE_FOLDER = "test_cases/2-small-test-case"
+    # TEST_CASE_FOLDER = "test_cases/3-medium-test-case"
+    # TEST_CASE_FOLDER = "test_cases/4-large-test-case"
+    # TEST_CASE_FOLDER = "test_cases/5-huge-test-case"
+    # TEST_CASE_FOLDER = "test_cases/6-gigantic-test-case"
+    TEST_CASE_FOLDER = "test_cases/7-unschedulable-test-case"
+    # TEST_CASE_FOLDER = "test_cases/8-unschedulable-test-case"
+    # TEST_CASE_FOLDER = "test_cases/9-unschedulable-test-case"
+    # TEST_CASE_FOLDER = "test_cases/10-unschedulable-test-case"
     OUTPUT_CSV = "solution.csv"
 
     tasks_csv = os.path.join(TEST_CASE_FOLDER, "tasks.csv")
@@ -45,7 +54,7 @@ def main():
                     print(f"⚠️  Half-Half mapping skipped for {comp['name']} (delta too small)")
 
     simulator = HierarchicalSimulator(system_model)
-    sim_results = simulator.run_simulation(simulation_time=200.0, dt=0.1)
+    sim_results = simulator.run_simulation(simulation_time=800.0, dt=0.1)
 
     if DO_WCRT_ANALYSIS:
         print("🧠 Estimating WCRT for all tasks...")
