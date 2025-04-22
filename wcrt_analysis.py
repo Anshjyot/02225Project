@@ -24,8 +24,25 @@ def estimate_wcrt(tasks):
             wcrt = R_next
 
         elif task.get("scheduler", "EDF").upper() == "EDF":
-            # TODO: Very simple EDF estimate, could be improved with formal response time bound
-            wcrt = D  # Assume worst-case deadline bound for now
+            # Formal WCRT computation for EDF (Baruah's bound)
+            D_i = task["deadline"]
+            C_i = task["effective_wcet"]
+
+            # Consider only tasks with deadline <= D_i (interfering)
+            interfering_tasks = [
+                t for t in tasks if t["deadline"] <= D_i
+            ]
+
+            t_val = C_i
+            while t_val <= D_i * 2:  # Reasonable upper bound
+                total_demand = sum(
+                    math.ceil(t_val / t["period"]) * t["effective_wcet"]
+                    for t in interfering_tasks
+                )
+                if total_demand <= t_val:
+                    break
+                t_val += 0.1  # step size for convergence (fine-grained)
+            wcrt = round(t_val, 2)
 
         wcrt_stats[task_id] = round(wcrt, 2)
 

@@ -1,0 +1,2 @@
+component_id,scheduler,budget,period,core_id,priority
+Sensor_Cluster,EDF,5,20,Core_1,

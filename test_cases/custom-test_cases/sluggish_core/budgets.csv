@@ -1,0 +1,2 @@
+component_id,scheduler,budget,period,core_id,priority
+Mixed_Load,RM,3,25,Core_1,1

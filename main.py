@@ -1,3 +1,4 @@
+
 import os
 from task_loader import load_csv_files
 from simulator import HierarchicalSimulator
@@ -5,12 +6,14 @@ from bdr_analysis import BDRAnalysis
 from bdr_auto_generator import compute_optimal_bdr
 from wcrt_analysis import estimate_wcrt
 from solution_writer import write_solution_csv
+from half_half_mapper import bdr_to_prm
 
 AUTO_COMPUTE_BDR = True
 DO_WCRT_ANALYSIS = True
 
 
 def main():
+    # TEST_CASE_FOLDER = "test_cases/custom-test_cases/camera_heavy"
     TEST_CASE_FOLDER = "test_cases/1-tiny-test-case"
     OUTPUT_CSV = "solution.csv"
 
@@ -35,6 +38,12 @@ def main():
                 alpha, delta = compute_optimal_bdr(tasks, scheduler)
                 comp["bdr_init"] = {"alpha": alpha, "delay": delta}
 
+                C_supply, T_supply = bdr_to_prm(alpha, delta)
+                if T_supply > 0:
+                    print(f"🔁 Half-Half (BDR→PRM) for {comp['name']}: C={C_supply}, T={T_supply}")
+                else:
+                    print(f"⚠️  Half-Half mapping skipped for {comp['name']} (delta too small)")
+
     simulator = HierarchicalSimulator(system_model)
     sim_results = simulator.run_simulation(simulation_time=200.0, dt=0.1)
 
@@ -50,7 +59,9 @@ def main():
 
     print("\n=== SIMULATION RESULTS ===")
     for tid, stats in sim_results["task_stats"].items():
-        print(f"Task {tid}: max={stats['max_resp_time']:.2f}, avg={stats['avg_response_time']:.2f}, miss={stats['missed_deadlines']}, schedulable={stats['schedulable']}")
+        wcrt_est = stats.get("wcrt_est", "N/A")
+        print(
+            f"Task {tid}: max={stats['max_resp_time']:.2f}, avg={stats['avg_response_time']:.2f}, miss={stats['missed_deadlines']}, schedulable={stats['schedulable']}, WCRT_est={wcrt_est}")
 
     analyzer = BDRAnalysis(system_model)
     analysis = analyzer.run_analysis()

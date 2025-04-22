@@ -1,0 +1,4 @@
+task_name,wcet,period,component_id,priority
+Task_0,5,50,Mixed_Load,1
+Task_1,6,100,Mixed_Load,0
+Task_2,2,25,Mixed_Load,2

@@ -1,0 +1,5 @@
+task_name,wcet,period,component_id,priority
+Task_0,2,20,Sensor_Cluster,
+Task_1,1,20,Sensor_Cluster,
+Task_2,3,20,Sensor_Cluster,
+Task_3,2,20,Sensor_Cluster,

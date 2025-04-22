@@ -1,0 +1,6 @@
+task_name,wcet,period,component_id,priority
+Task_0,2,10,Camera_Sensor,0
+Task_1,2,10,Camera_Sensor,1
+Task_2,1,10,Camera_Sensor,2
+Task_3,1,10,Camera_Sensor,3
+Task_4,2,10,Camera_Sensor,4
