@@ -1,3 +1,4 @@
+# simulator.py
 import math
 
 class HierarchicalSimulator:
@@ -10,7 +11,6 @@ class HierarchicalSimulator:
             core_id = core["core_id"]
             for comp in core["components"]:
                 ckey = (core_id, comp["name"])
-                # Store alpha, scheduler, etc.
                 self.comp_params[ckey] = {
                     "alpha": comp["bdr_init"]["alpha"],
                     "scheduler": comp["scheduler"]
@@ -25,13 +25,15 @@ class HierarchicalSimulator:
                         "effective_wcet": tinfo["effective_wcet"],
                         "priority": tinfo.get("priority", None),
                         "scheduler": comp["scheduler"],
-                        "type": tinfo.get("type","hard"),
+                        "type": tinfo.get("type", "hard"),
+                        "component_id": tinfo.get("component_id", "Unknown"),
 
                         "next_release": 0.0,
                         "job": None,
                         "stats": {
                             "max_resp_time": 0.0,
-                            "missed_deadlines": 0
+                            "missed_deadlines": 0,
+                            "resp_times": []
                         }
                     })
                 self.comp_states[ckey] = tasks_state
@@ -45,14 +47,12 @@ class HierarchicalSimulator:
                         if tsk["job"] is not None:
                             tsk["stats"]["missed_deadlines"] += 1
                             tsk["job"] = None
-                        # Create new job
                         tsk["job"] = {
                             "release": t,
                             "remaining": tsk["effective_wcet"],
                             "deadline": t + tsk["deadline"]
                         }
                         tsk["next_release"] = t + tsk["period"]
-
 
             for ckey, tasks in self.comp_states.items():
                 alpha = self.comp_params[ckey]["alpha"]
@@ -61,17 +61,11 @@ class HierarchicalSimulator:
                 if allocated <= 0 or not ready_tasks:
                     continue
 
-
                 sched = self.comp_params[ckey]["scheduler"].upper()
                 if sched == "EDF":
                     ready_tasks.sort(key=lambda x: x["job"]["deadline"])
                 elif sched in ["FPS", "RM"]:
-
                     ready_tasks.sort(key=lambda x: x["priority"] if x["priority"] is not None else math.inf)
-                else:
-
-                    pass
-
 
                 remain = allocated
                 for tsk in ready_tasks:
@@ -82,26 +76,32 @@ class HierarchicalSimulator:
                     job["remaining"] -= amount
                     remain -= amount
                     if job["remaining"] <= 1e-9:
-                        # finished
-                        rtime = (t + dt) - job["release"]
-                        if rtime > tsk["stats"]["max_resp_time"]:
-                            tsk["stats"]["max_resp_time"] = rtime
+                        resp = (t + dt) - job["release"]
+                        tsk["stats"]["max_resp_time"] = max(resp, tsk["stats"]["max_resp_time"])
+                        tsk["stats"]["resp_times"].append(resp)
                         tsk["job"] = None
-
 
             for ckey, tasks in self.comp_states.items():
                 for tsk in tasks:
                     job = tsk["job"]
                     if job is not None and t >= job["deadline"]:
-                        # missed
                         tsk["stats"]["missed_deadlines"] += 1
                         tsk["job"] = None
 
             t += dt
 
-
         final_stats = {"task_stats": {}}
         for ckey, tasks in self.comp_states.items():
             for tsk in tasks:
-                final_stats["task_stats"][tsk["id"]] = tsk["stats"]
+                stats = tsk["stats"]
+                rt_list = stats.get("resp_times", [])
+                avg = sum(rt_list) / len(rt_list) if rt_list else 0.0
+                is_sched = stats["missed_deadlines"] == 0
+                final_stats["task_stats"][tsk["id"]] = {
+                    "max_resp_time": stats["max_resp_time"],
+                    "avg_response_time": avg,
+                    "missed_deadlines": stats["missed_deadlines"],
+                    "schedulable": is_sched,
+                    "component_id": tsk["component_id"]
+                }
         return final_stats
