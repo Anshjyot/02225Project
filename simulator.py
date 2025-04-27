@@ -6,14 +6,28 @@ class HierarchicalSimulator:
         self.system_model = system_model
         self.comp_states = {}
         self.comp_params = {}
+        self.comp_supply_state = {}  # NEW: Token bucket tracking per component
 
         for core in system_model["cores"]:
             core_id = core["core_id"]
             for comp in core["components"]:
                 ckey = (core_id, comp["name"])
+                alpha = comp["bdr_init"]["alpha"]
+                delta = comp["bdr_init"]["delay"]
+
+                # Derive PRM params using Half-Half
+                T_supply = 2 * delta
+                C_supply = alpha * (T_supply - delta)
+
                 self.comp_params[ckey] = {
-                    "alpha": comp["bdr_init"]["alpha"],
                     "scheduler": comp["scheduler"]
+                }
+
+                self.comp_supply_state[ckey] = {
+                    "supply_timer": 0.0,
+                    "C_remain": 0.0,
+                    "C_supply": C_supply,
+                    "T_supply": T_supply
                 }
 
                 tasks_state = []
@@ -41,6 +55,7 @@ class HierarchicalSimulator:
     def run_simulation(self, simulation_time=200.0, dt=0.1):
         t = 0.0
         while t < simulation_time:
+            # Release new jobs
             for ckey, tasks in self.comp_states.items():
                 for tsk in tasks:
                     if t >= tsk["next_release"]:
@@ -54,9 +69,17 @@ class HierarchicalSimulator:
                         }
                         tsk["next_release"] = t + tsk["period"]
 
+            # Execute jobs
             for ckey, tasks in self.comp_states.items():
-                alpha = self.comp_params[ckey]["alpha"]
-                allocated = alpha * dt
+                state = self.comp_supply_state[ckey]
+
+                # Refill PRM budget if needed
+                state["supply_timer"] += dt
+                if state["supply_timer"] >= state["T_supply"]:
+                    state["C_remain"] = state["C_supply"]
+                    state["supply_timer"] -= state["T_supply"]
+
+                allocated = min(dt, state["C_remain"])
                 ready_tasks = [tsk for tsk in tasks if tsk["job"] is not None]
                 if allocated <= 0 or not ready_tasks:
                     continue
@@ -75,12 +98,14 @@ class HierarchicalSimulator:
                     amount = min(remain, job["remaining"])
                     job["remaining"] -= amount
                     remain -= amount
+                    state["C_remain"] -= amount
                     if job["remaining"] <= 1e-9:
                         resp = (t + dt) - job["release"]
                         tsk["stats"]["max_resp_time"] = max(resp, tsk["stats"]["max_resp_time"])
                         tsk["stats"]["resp_times"].append(resp)
                         tsk["job"] = None
 
+            # Deadline miss check
             for ckey, tasks in self.comp_states.items():
                 for tsk in tasks:
                     job = tsk["job"]

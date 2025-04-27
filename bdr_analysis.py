@@ -41,10 +41,11 @@ class BDRAnalysis:
                 horizon = math.ceil(sum_periods)
 
                 schedulable = True
-                for tcheck in range(horizon+1):
+                for tcheck in range(horizon + 1):
                     demand = dbf_func(tasks, tcheck)
                     supply = self.sbf_bdr(alpha, delta, tcheck)
-                    if demand > supply + 1e-9:
+                    if demand > supply + 1e-6:  # more slack
+                        print(f"[DEBUG] ❌ Unschedulable at t={tcheck}: demand={demand:.2f} > supply={supply:.2f}")
                         schedulable = False
                         break
 

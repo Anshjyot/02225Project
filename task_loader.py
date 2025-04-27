@@ -8,9 +8,11 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv):
         for row in reader:
             cid = row["core_id"]
             speed = float(row["speed_factor"])
+            sched = row["scheduler"]
             cores_info[cid] = {
                 "core_id": cid,
                 "speed_factor": speed,
+                "scheduler": sched,
                 "components": []
             }
 

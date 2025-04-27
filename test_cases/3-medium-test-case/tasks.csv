@@ -3,6 +3,7 @@ Task_0,16,100,Camera_Sensor,1
 Task_1,10,50,Camera_Sensor,0
 Task_2,58,300,Camera_Sensor,3
 Task_3,8,200,Camera_Sensor,2
+
 Task_4,120,900,Camera_Sensor,4
 Task_5,4,25,Image_Processor,
 Task_6,4,50,Image_Processor,

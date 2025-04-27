@@ -9,6 +9,7 @@ def write_solution_csv(task_stats, analysis_results, filename="solution.csv"):
         ])
 
         # Map of component -> list of task schedulabilities
+
         comp_sched_map = {}
         task_rows = []
 
