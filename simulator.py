@@ -106,7 +106,7 @@ class HierarchicalSimulator:
                         remaining -= amount
                         if job["remaining"] <= 1e-9:
                             rtime = (t + dt) - job["release"]
-                            print(f"[DEBUG] ✅ Task {tsk['id']} completed at t={t+dt:.2f}, response time: {rtime:.2f}")
+                            #print(f"[DEBUG] ✅ Task {tsk['id']} completed at t={t+dt:.2f}, response time: {rtime:.2f}")
                             tsk["stats"]["max_resp_time"] = max(tsk["stats"]["max_resp_time"], rtime)
                             tsk["job"] = None
 

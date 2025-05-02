@@ -26,10 +26,13 @@ class BDRAnalysis:
             results[c_id] = {}
             for comp in core["components"]:
                 cname = comp["name"]
-                alpha = comp["bdr_init"]["alpha"]
-                delta = comp["bdr_init"]["delay"]
+                alpha_QP = comp["bdr_init"]["alpha"]  # actually Q
+                period_P = comp["bdr_init"]["delay"]
                 tasks = comp["tasks"]
                 sched = comp["scheduler"].upper()
+
+                alpha = alpha_QP / period_P  # Q / Ps
+                delta = period_P - alpha_QP
 
                 if sched == "EDF":
                     dbf_func = dbf_edf

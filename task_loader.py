@@ -104,8 +104,9 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv):
         for comp in core["components"]:
             for task in comp["tasks"]:
                 task["effective_wcet"] = task["wcet"] / speed
+                task["wcet"] = task["effective_wcet"]
 
-    # Step 7: Sort components by RM priority if needed
+                # Step 7: Sort components by RM priority if needed
     for core in system_model["cores"]:
         if core["scheduler"] == "RM":
             core["components"].sort(key=lambda comp: comp.get("priority", float("inf")))
