@@ -30,9 +30,9 @@ class BDRAnalysis:
                 period_P = comp["bdr_init"]["delay"]
                 tasks = comp["tasks"]
                 sched = comp["scheduler"].upper()
-
-                alpha = alpha_QP / period_P  # Q / Ps
+                alpha = alpha_QP / period_P  # Q / P
                 delta = period_P - alpha_QP
+
 
                 if sched == "EDF":
                     dbf_func = dbf_edf

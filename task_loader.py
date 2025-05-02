@@ -106,6 +106,7 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv):
                 task["effective_wcet"] = task["wcet"] / speed
                 task["wcet"] = task["effective_wcet"]
 
+
                 # Step 7: Sort components by RM priority if needed
     for core in system_model["cores"]:
         if core["scheduler"] == "RM":

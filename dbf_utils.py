@@ -38,6 +38,7 @@ def dbf_fps(tasks, t):
         C = task["wcet"]
         T = task["period"]
         D = task["deadline"]
+
         if t >= D:
             nJobs = math.floor((t - D) / T + 1)
             if nJobs < 0:

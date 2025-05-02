@@ -120,6 +120,7 @@ class HierarchicalSimulator:
                         tsk["stats"]["max_resp_time"] = max(tsk["stats"]["max_resp_time"], rtime)
                         print(f"[DEBUG] ❌ Deadline MISS for {tsk['id']} at time {t:.2f} "
                             f"(release: {job['release']:.2f}, deadline: {job['deadline']:.2f}, response time: {rtime:.2f})")
+
                         tsk["job"] = None
 
             t += dt
