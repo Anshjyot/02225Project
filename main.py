@@ -40,12 +40,12 @@ def main():
 
     # 3) Run hierarchical simulator
     simulator = HierarchicalSimulator(system_model)
-    sim_results = simulator.run_simulation(simulation_time=1000.0, dt=0.1)
+    sim_results = simulator.run_simulation(simulation_time=1800.0, dt=0.1)
 
     # print("\n=== SIMULATION RESULTS =´´==")
-    for task_id, stats in sim_results["task_stats"].items():
-        print(f"Task {task_id} -> max_resp_time = {stats['max_resp_time']:.2f},"
-              f" missed_deadlines = {stats['missed_deadlines']}")
+    #for task_id, stats in sim_results["task_stats"].items():
+        ##print(f"Task {task_id} -> max_resp_time = {stats['max_resp_time']:.2f},"
+         ##     f" missed_deadlines = {stats['missed_deadlines']}")#
 
     # 4) BDR-based analysis
     analyzer = BDRAnalysis(system_model)

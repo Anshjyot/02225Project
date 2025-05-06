@@ -47,8 +47,8 @@ class HierarchicalSimulator:
                             rtime = t - job["release"]
                             tsk["stats"]["max_resp_time"] = max(tsk["stats"]["max_resp_time"], rtime)
                             tsk["stats"]["missed_deadlines"] += 1
-                            print(f"[DEBUG] ❌ Missed job release for task {tsk['id']} at time {t:.2f} "
-                                f"(release: {job['release']:.2f}, deadline: {job['deadline']:.2f}, remaining: {job['remaining']:.2f})")
+                            ##print(f"[DEBUG] ❌ Missed job release for task {tsk['id']} at time {t:.2f} "
+                             ##   f"(release: {job['release']:.2f}, deadline: {job['deadline']:.2f}, remaining: {job['remaining']:.2f})")
                             tsk["job"] = None
                         tsk["job"] = {
                             "release": t,
