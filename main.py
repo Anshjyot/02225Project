@@ -9,14 +9,14 @@ def main():
     # 1) test case folder here:
     ################################################################
     #TEST_CASE_FOLDER = "test_cases/1-tiny-test-case" #BDR false
-    #TEST_CASE_FOLDER = "test_cases/2-small-test-case" # correcvt, true
+    TEST_CASE_FOLDER = "test_cases/2-small-test-case" # correcvt, true
     #TEST_CASE_FOLDER = "test_cases/3-medium-test-case"
     #TEST_CASE_FOLDER = "test_cases/4-large-test-case" #sim false, one missed
     #TEST_CASE_FOLDER = "test_cases/5-huge-test-case"
     #TEST_CASE_FOLDER = "test_cases/6-gigantic-test-case"
     #TEST_CASE_FOLDER = "test_cases/7-unschedulable-test-case"
     #TEST_CASE_FOLDER = "test_cases/8-unschedulable-test-case"
-    TEST_CASE_FOLDER = "test_cases/9-unschedulable-test-case" #true to all
+    #TEST_CASE_FOLDER = "test_cases/9-unschedulable-test-case" #true to all
     #TEST_CASE_FOLDER = "test_cases/10-unschedulable-test-case"
 
 
@@ -69,7 +69,7 @@ def main():
 
     # 5) Write solution out
     if OUTPUT_CSV:
-        #write_solution_csv(sim_results["task_stats"], analysis_res, task_to_comp, filename=OUTPUT_CSV)
+        write_solution_csv(sim_results["task_stats"], analysis_res, task_to_comp, filename=OUTPUT_CSV)
         print(f"\n✅ Results written to: {OUTPUT_CSV}")
 
     print("\n🏁 Simulation + analysis complete.")

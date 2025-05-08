@@ -26,7 +26,12 @@ class HierarchicalSimulator:
                                "deadline":tinfo["deadline"],"effective_wcet":tinfo["effective_wcet"],
                                "priority":tinfo.get("priority"),"type":tinfo.get("type","hard"),
                                "next_release":0.0,"job":None,
-                               "stats":{"max_resp_time":0.0,"missed_deadlines":0}})
+                               "stats":{
+                                        "max_resp_time": 0.0,
+                                        "missed_deadlines": 0,
+                                        "total_resp_time": 0.0,
+                                        "num_completed_jobs": 0
+                                    }})
                 self.task_states[ckey] = ts
 
     def run_simulation(self, simulation_time: float, dt: float = 0.1):
@@ -88,6 +93,8 @@ class HierarchicalSimulator:
                         if j["job"]["remaining"] <= 1e-12:
                             resp = (t + dt) - j["job"]["release"]
                             j["stats"]["max_resp_time"] = max(j["stats"]["max_resp_time"], resp)
+                            j["stats"]["total_resp_time"] += resp
+                            j["stats"]["num_completed_jobs"] += 1
                             j["job"] = None
             # 4) deadline checks
             for ts in self.task_states.values():
