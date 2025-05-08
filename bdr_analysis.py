@@ -85,13 +85,13 @@ class BDRAnalysis:
             if not all(s["ok_inside"] for s in core_servers):
                 continue
             
-            # ------------ DEBUG dump: one line per core ------------
+            """# ------------ DEBUG dump: one line per core ------------
             print(f"[DBG] Core {c_id:>5}  sched={core_sched:3}  "
                   f"Σα = {sum(s['Q']/s['P'] for s in core_servers):4.3f}   "
                   f"servers = "
                   + ", ".join(f"{s['name']}[Q={s['Q']},P={s['P']},J={s['J']}]"
                               for s in core_servers))
-            # --------------------------------------------------------
+            # --------------------------------------------------------"""
 
             # ---- 2) check set of servers on the core ----
             if core_sched == "EDF":
