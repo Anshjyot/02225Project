@@ -1,36 +1,18 @@
 import math
 
 def dbf_edf(tasks, t):
-    """
-    DBF for a set of tasks scheduled by EDF:
-       dbf(W,t) = sum of max(0, floor((t - D_i)/T_i + 1)* C_i).
-    """
     demand = 0.0
     for task in tasks:
-        C = task["effective_wcet"]
-        T = task["period"]
-        D = task["deadline"]
+        C, T, D = task["wcet"], task["period"], task["deadline"]
         if t >= D:
-            nJobs = math.floor((t - D)/T + 1)
-            if nJobs < 0:
-                nJobs = 0
-            demand += nJobs * C
+            n_jobs = math.floor((t - D) / T + 1)
+            demand += max(0, n_jobs) * C
     return demand
 
 def dbf_fps(tasks, t):
     """
-    Simple hierarchical approach, we sum demands of all tasks
-    ignoring priority-level separation.
-    A more advanced formula would do a priority-by-priority analysis.
+    Demand‑bound function for a fixed‑priority (RM/FPS) task set.
+    For correctness we *must* include every task – priority
+    does not change the DBF expression.
     """
-    demand = 0.0
-    for task in tasks:
-        C = task["effective_wcet"]
-        T = task["period"]
-        D = task["deadline"]
-        if t >= D:
-            nJobs = math.floor((t - D)/T + 1)
-            if nJobs < 0:
-                nJobs = 0
-            demand += nJobs*C
-    return demand
+    return dbf_edf(tasks, t)   # <<< early‑exit shortcut removed
