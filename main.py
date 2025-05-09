@@ -9,7 +9,7 @@ def main():
     # 1) test case folder here:
     ################################################################
     #TEST_CASE_FOLDER = "test_cases/1-tiny-test-case" #BDR false
-    TEST_CASE_FOLDER = "test_cases/2-small-test-case" # correcvt, true
+    #TEST_CASE_FOLDER = "test_cases/2-small-test-case" # correcvt, true
     #TEST_CASE_FOLDER = "test_cases/3-medium-test-case"
     #TEST_CASE_FOLDER = "test_cases/4-large-test-case" #sim false, one missed
     #TEST_CASE_FOLDER = "test_cases/5-huge-test-case"
@@ -17,7 +17,7 @@ def main():
     #TEST_CASE_FOLDER = "test_cases/7-unschedulable-test-case"
     #TEST_CASE_FOLDER = "test_cases/8-unschedulable-test-case"
     #TEST_CASE_FOLDER = "test_cases/9-unschedulable-test-case" #true to all
-    #TEST_CASE_FOLDER = "test_cases/10-unschedulable-test-case"
+    TEST_CASE_FOLDER = "test_cases/10-unschedulable-test-case"
 
 
     OUTPUT_CSV = "solution.csv"
@@ -51,14 +51,19 @@ def main():
     analyzer = BDRAnalysis(system_model)
     analysis_res = analyzer.run_analysis()
 
-    print("\n=== ANALYSIS RESULTS (BDR) ===")
+    print("\n=== ANALYSIS RESULTS (BDR + WCRT) ===")
     for core, comps in analysis_res.items():
         print(f"[Core {core}]")
         for comp_name, val in comps.items():
             alpha = val["alpha"]
             delta = val["delay"]
-            sched = val["schedulable"]
-            print(f"   Component {comp_name} => alpha={alpha:.3f}, delta={delta:.2f}, schedulable={sched}")
+            ok_comp = val["schedulable"]
+            print(f"   Component {comp_name}"
+                  f" → α={alpha:.3f}, Δ={delta:.2f}, schedulable={ok_comp}")
+
+            # ---------- NEW: dump per-task WCRT ----------
+            for tid, R in val["wcrt"].items():
+                print(f"      • Task {tid:<15}  WCRT = {R:.2f}")
 
     # Build task to component map
     task_to_comp = {}

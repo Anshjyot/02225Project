@@ -1,15 +1,17 @@
+# bdr_analysis.py
 import math
 from functools import reduce
-from dbf_utils import dbf_edf, dbf_fps
 from math import lcm
 
+from dbf_utils import dbf_edf, dbf_fps
+from wcrt_analysis import compute_wcrt          # <-- adjust if file is wcrt_utils.py
 
 
 class BDRAnalysis:
     def __init__(self, system_model):
         self.system_model = system_model
 
-    # ---------- BDR supply‑bound function -------------------------
+    # ---------- BDR supply-bound function -------------------------
     @staticmethod
     def sbf_bdr(alpha, delta, t):
         return 0.0 if t <= delta else alpha * (t - delta)
@@ -35,7 +37,6 @@ class BDRAnalysis:
         n_jobs = math.floor((t - (J + P)) / P) + 1
         return n_jobs * Q
 
-
     # ---------- main entry ---------------------------------------
     def run_analysis(self):
         results = {}
@@ -54,9 +55,10 @@ class BDRAnalysis:
                 sched = comp["scheduler"].upper()
 
                 alpha = Q / P
-                delta = 2 * (P - Q)  #needs to be as low as possible
+                delta = 2 * (P - Q)                 # smallest safe Δ from Half-Half
                 dbf   = dbf_edf if sched == "EDF" else dbf_fps
 
+                # horizon H needed for exact DBF test
                 periods   = [t["period"] for t in tasks]
                 deadlines = [t["deadline"] for t in tasks]
                 H = max(self.lcm_of_periods(periods),
@@ -68,10 +70,14 @@ class BDRAnalysis:
                         ok = False
                         break
 
+                # ---------- NEW: per-task WCRT computation ----------
+                wcrt_map = compute_wcrt(tasks, sched, alpha, delta)
+
                 results[c_id][cname] = {
                     "alpha": alpha,
                     "delay": delta,
-                    "schedulable": ok
+                    "schedulable": ok,
+                    "wcrt": wcrt_map          # <-- stored here
                 }
 
                 core_servers.append({
@@ -81,22 +87,14 @@ class BDRAnalysis:
                     "ok_inside": ok
                 })
 
-            # if any component already failed, skip core‑level test
+            # if any component already failed, skip core-level test
             if not all(s["ok_inside"] for s in core_servers):
                 continue
-            
-            """# ------------ DEBUG dump: one line per core ------------
-            print(f"[DBG] Core {c_id:>5}  sched={core_sched:3}  "
-                  f"Σα = {sum(s['Q']/s['P'] for s in core_servers):4.3f}   "
-                  f"servers = "
-                  + ", ".join(f"{s['name']}[Q={s['Q']},P={s['P']},J={s['J']}]"
-                              for s in core_servers))
-            # --------------------------------------------------------"""
 
             # ---- 2) check set of servers on the core ----
             if core_sched == "EDF":
                 periods = [int(s["P"]) for s in core_servers]
-                H_core  = lcm(*periods)          # first hyper‑period of the servers
+                H_core  = lcm(*periods)          # first hyper-period of the servers
                 for t in range(H_core + 1):
                     demand = sum(self.dbf_server(s["Q"], s["P"], s["J"], t)
                                  for s in core_servers)
