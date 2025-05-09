@@ -8,7 +8,7 @@ def main():
     ################################################################
     # 1) test case folder here:
     ################################################################
-    #TEST_CASE_FOLDER = "test_cases/1-tiny-test-case" #BDR false
+    TEST_CASE_FOLDER = "test_cases/1-tiny-test-case" #BDR false
     #TEST_CASE_FOLDER = "test_cases/2-small-test-case" # correcvt, true
     #TEST_CASE_FOLDER = "test_cases/3-medium-test-case"
     #TEST_CASE_FOLDER = "test_cases/4-large-test-case" #sim false, one missed
@@ -17,7 +17,7 @@ def main():
     #TEST_CASE_FOLDER = "test_cases/7-unschedulable-test-case"
     #TEST_CASE_FOLDER = "test_cases/8-unschedulable-test-case"
     #TEST_CASE_FOLDER = "test_cases/9-unschedulable-test-case" #true to all
-    TEST_CASE_FOLDER = "test_cases/10-unschedulable-test-case"
+    #TEST_CASE_FOLDER = "test_cases/10-unschedulable-test-case"
 
 
     OUTPUT_CSV = "solution.csv"
@@ -51,18 +51,23 @@ def main():
     analyzer = BDRAnalysis(system_model)
     analysis_res = analyzer.run_analysis()
 
-    print("\n=== ANALYSIS RESULTS (BDR + WCRT) ===")
+    print("\n=== ANALYSIS RESULTS: BDR MODEL ===")
     for core, comps in analysis_res.items():
         print(f"[Core {core}]")
-        for comp_name, val in comps.items():
-            alpha = val["alpha"]
-            delta = val["delay"]
-            ok_comp = val["schedulable"]
-            print(f"   Component {comp_name}"
-                  f" → α={alpha:.3f}, Δ={delta:.2f}, schedulable={ok_comp}")
+        for cname, result in comps.items():
+            bdr = result["bdr"]
+            print(
+                f"   Component {cname} → α={bdr['alpha']:.3f}, Δ={bdr['delay']:.2f}, schedulable={bdr['schedulable']}")
+            for tid, R in bdr["wcrt"].items():
+                print(f"      • Task {tid:<15}  WCRT = {R:.2f}")
 
-            # ---------- NEW: dump per-task WCRT ----------
-            for tid, R in val["wcrt"].items():
+    print("\n=== ANALYSIS RESULTS: PRM MODEL ===")
+    for core, comps in analysis_res.items():
+        print(f"[Core {core}]")
+        for cname, result in comps.items():
+            prm = result["prm"]
+            print(f"   Component {cname} → Q={prm['Q']:.2f}, P={prm['P']:.2f}, schedulable={prm['schedulable']}")
+            for tid, R in prm["wcrt"].items():
                 print(f"      • Task {tid:<15}  WCRT = {R:.2f}")
 
     # Build task to component map

@@ -3,7 +3,7 @@ from functools import reduce
 from math import lcm
 
 from dbf_utils import dbf_edf, dbf_fps
-from wcrt_analysis import compute_wcrt
+from wcrt_analysis import compute_wcrt, compute_wcrt_edf, compute_wcrt_rm
 
 
 class BDRAnalysis:
@@ -18,12 +18,14 @@ class BDRAnalysis:
         Q = (alpha * P) / 2
         return Q, P
 
-    # ---------- BDR supply-bound function -------------------------
     @staticmethod
     def sbf_bdr(alpha, delta, t):
         return 0.0 if t <= delta else alpha * (t - delta)
 
-    # ---------- helpers ------------------------------------------
+    @staticmethod
+    def sbf_prm(Q, P, t):
+        return max(0.0, math.floor(t / P) * Q)
+
     @staticmethod
     def lcm(a, b):
         return abs(a * b) // math.gcd(int(a), int(b))
@@ -32,7 +34,6 @@ class BDRAnalysis:
     def lcm_of_periods(periods):
         return int(reduce(BDRAnalysis.lcm, periods))
 
-    # ---------- DBF of a periodic server with jitter -------------
     @staticmethod
     def dbf_server(Q, P, J, t):
         if t < J + P:
@@ -40,7 +41,55 @@ class BDRAnalysis:
         n_jobs = math.floor((t - (J + P)) / P) + 1
         return n_jobs * Q
 
-    # ---------- main entry ---------------------------------------
+    def analyze_component(self, comp, speed_factor):
+        tasks = comp["tasks"]
+        sched = comp["scheduler"].upper()
+        Q = comp["bdr_init"]["alpha"]
+        P = comp["bdr_init"]["delay"]
+        alpha = Q / P
+        delta = 2 * (P - Q)
+        dbf = dbf_edf if sched == "EDF" else dbf_fps
+
+        periods = [t["period"] for t in tasks]
+        deadlines = [t["deadline"] for t in tasks]
+        H = max(self.lcm_of_periods(periods), int(2 * max(deadlines)))
+
+        # BDR analysis
+        bdr_ok = True
+        for t in range(H + 1):
+            if dbf(tasks, t) > self.sbf_bdr(alpha, delta, t) + 1e-9:
+                bdr_ok = False
+                break
+        bdr_wcrt = compute_wcrt(tasks, sched, alpha, delta)
+
+        # PRM analysis
+        prm_ok = True
+        for t in range(H + 1):
+            if dbf(tasks, t) > self.sbf_prm(Q, P, t) + 1e-9:
+                prm_ok = False
+                break
+        if sched == "EDF":
+            prm_wcrt = compute_wcrt_edf(tasks, alpha, 0.0)  # delta = 0 for PRM (no delay model)
+        else:
+            prm_wcrt = compute_wcrt_rm(tasks, 0.0)  # no jitter for PRM
+
+        result = {
+            "bdr": {
+                "alpha": alpha,
+                "delay": delta,
+                "schedulable": bdr_ok,
+                "wcrt": bdr_wcrt
+            },
+            "prm": {
+                "Q": Q,
+                "P": P,
+                "schedulable": prm_ok,
+                "wcrt": prm_wcrt
+            }
+        }
+
+        return result, Q, P, delta, bdr_ok and prm_ok
+
     def run_analysis(self):
         results = {}
         for core in self.system_model["cores"]:
@@ -49,47 +98,24 @@ class BDRAnalysis:
             results[c_id] = {}
 
             core_servers = []
+
             for comp in core["components"]:
-                cname = comp["name"]
-                Q = comp["bdr_init"]["alpha"]
-                P = comp["bdr_init"]["delay"]
-                tasks = comp["tasks"]
-                sched = comp["scheduler"].upper()
+                def recurse(comp):
+                    cname = comp["name"]
+                    res, Q, P, delta, ok = self.analyze_component(comp, core["speed_factor"])
+                    results[c_id][cname] = res
 
-                alpha = Q / P
-                delta = 2 * (P - Q)  # smallest safe Δ from Half-Half
-                dbf = dbf_edf if sched == "EDF" else dbf_fps
+                    core_servers.append({
+                        "Q": Q, "P": P, "J": delta,
+                        "priority": comp.get("priority"),
+                        "name": cname,
+                        "ok_inside": ok
+                    })
 
-                periods = [t["period"] for t in tasks]
-                deadlines = [t["deadline"] for t in tasks]
-                H = max(self.lcm_of_periods(periods), int(2 * max(deadlines)))
+                    for sub in comp.get("subcomponents", []):
+                        recurse(sub)
 
-                ok = True
-                for t in range(H + 1):
-                    if dbf(tasks, t) > self.sbf_bdr(alpha, delta, t) + 1e-9:
-                        ok = False
-                        break
-
-                wcrt_map = compute_wcrt(tasks, sched, alpha, delta)
-
-                results[c_id][cname] = {
-                    "alpha": alpha,
-                    "delay": delta,
-                    "schedulable": ok,
-                    "wcrt": wcrt_map
-                }
-
-                if ok and 0 < alpha < 1:
-                    Q_half, P_half = self.half_half_to_qp(alpha, delta)
-                    results[c_id][cname]["Q"] = round(Q_half, 2)
-                    results[c_id][cname]["P"] = round(P_half, 2)
-
-                core_servers.append({
-                    "Q": Q, "P": P, "J": delta,
-                    "priority": comp.get("priority"),
-                    "name": cname,
-                    "ok_inside": ok
-                })
+                recurse(comp)
 
             if not all(s["ok_inside"] for s in core_servers):
                 continue
@@ -101,7 +127,8 @@ class BDRAnalysis:
                     demand = sum(self.dbf_server(s["Q"], s["P"], s["J"], t) for s in core_servers)
                     if demand > t + 1e-9:
                         for s in core_servers:
-                            results[c_id][s["name"]]["schedulable"] = False
+                            results[c_id][s["name"]]["bdr"]["schedulable"] = False
+                            results[c_id][s["name"]]["prm"]["schedulable"] = False
                         break
             else:
                 hp_sorted = sorted(core_servers, key=lambda s: s["priority"])
@@ -116,10 +143,12 @@ class BDRAnalysis:
                             break
                         if I + s["Q"] > s["P"]:
                             for ss in core_servers:
-                                results[c_id][ss["name"]]["schedulable"] = False
+                                results[c_id][ss["name"]]["bdr"]["schedulable"] = False
+                                results[c_id][ss["name"]]["prm"]["schedulable"] = False
                             break
                         R = I + s["Q"]
                     else:
                         continue
                     break
+
         return results

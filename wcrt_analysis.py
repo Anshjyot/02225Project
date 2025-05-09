@@ -58,5 +58,6 @@ def compute_wcrt(tasks: List[Dict], scheduler: str, alpha: float, delta: float) 
         return compute_wcrt_rm(tasks, delta)
     elif sched == "EDF":
         return compute_wcrt_edf(tasks, alpha, delta)
+
     else:
         raise ValueError(f"Unknown scheduler: {scheduler}")

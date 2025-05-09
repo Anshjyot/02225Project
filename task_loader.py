@@ -17,12 +17,13 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv):
             cores_info[cid] = {
                 "core_id": cid,
                 "speed_factor": speed,
-                "scheduler": scheduler,  # Top-level scheduler for components
+                "scheduler": scheduler,
                 "components": []
             }
 
-    # Step 2: Parse budgets.csv (components and their mapping to cores)
+    # Step 2: Parse budgets.csv (components and their mapping to cores or parents)
     comp_info = {}
+    children_map = {}
     with open(budgets_csv, "r") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -30,18 +31,23 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv):
             scheduler = row["scheduler"].strip().upper()
             alpha = float(row["budget"])
             delay = float(row["period"])
-            parent_core = row["core_id"]
+            parent_core = row.get("core_id")
+            parent_comp = row.get("parent_component") or None
             priority = int(row["priority"]) if row.get("priority") else None
 
-            if comp_id not in comp_info:
-                comp_info[comp_id] = {
-                    "name": comp_id,
-                    "scheduler": scheduler,
-                    "bdr_init": {"alpha": alpha, "delay": delay},
-                    "tasks": [],
-                    "parent_core": parent_core,
-                    "priority": priority  # For RM-based core scheduling
-                }
+            comp_info[comp_id] = {
+                "name": comp_id,
+                "scheduler": scheduler,
+                "bdr_init": {"alpha": alpha, "delay": delay},
+                "tasks": [],
+                "subcomponents": [],
+                "parent_core": parent_core,
+                "parent_component": parent_comp,
+                "priority": priority
+            }
+
+            if parent_comp:
+                children_map.setdefault(parent_comp, []).append(comp_id)
 
     # Step 3: Parse tasks.csv (tasks inside each component)
     with open(tasks_csv, "r") as f:
@@ -58,7 +64,6 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv):
             if component_id not in comp_info:
                 raise ValueError(f"Component {component_id} not found in budgets.csv!")
 
-            # Auto-assign RM priority if needed
             scheduler = comp_info[component_id]["scheduler"]
             if priority is None and scheduler in ["FPS", "RM"]:
                 print(f"⚠️ Warning: Task {task_name} in component {component_id} has no priority! Auto-assigning RM priority based on period.")
@@ -73,14 +78,20 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv):
                 "type": ttype,
             })
 
-    # Debug: show tasks assigned per component
+    # Link subcomponents
+    for parent, children in children_map.items():
+        for cid in children:
+            comp_info[parent]["subcomponents"].append(comp_info[cid])
+
     print("=== Component Task Assignment ===")
     for comp_id, comp in comp_info.items():
         task_ids = [t["id"] for t in comp["tasks"]]
-        print(f"Component {comp_id} (Scheduler: {comp['scheduler']}) on Core {comp['parent_core']} has tasks: {task_ids}")
+        print(f"Component {comp_id} (Scheduler: {comp['scheduler']}) has tasks: {task_ids}")
 
     # Step 4: Build component-core hierarchy
     for cinfo in comp_info.values():
+        if not cinfo["parent_core"]:
+            continue
         core_id = cinfo["parent_core"]
         if core_id not in cores_info:
             raise ValueError(f"Core {core_id} from budgets.csv not found in architecture.csv!")
@@ -90,7 +101,8 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv):
             "scheduler": cinfo["scheduler"],
             "bdr_init": cinfo["bdr_init"],
             "priority": cinfo["priority"],
-            "tasks": cinfo["tasks"]
+            "tasks": cinfo["tasks"],
+            "subcomponents": cinfo["subcomponents"]
         })
 
     # Step 5: Construct the full system model
@@ -101,13 +113,20 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv):
     # Step 6: Adjust WCET based on core speed
     for core in system_model["cores"]:
         speed = core["speed_factor"]
-        for comp in core["components"]:
-            for task in comp["tasks"]:
+        def adjust_wcet(tasks):
+            for task in tasks:
                 task["effective_wcet"] = task["wcet"] / speed
                 task["wcet"] = task["effective_wcet"]
 
+        def adjust_all(comp):
+            adjust_wcet(comp["tasks"])
+            for sub in comp.get("subcomponents", []):
+                adjust_all(sub)
 
-                # Step 7: Sort components by RM priority if needed
+        for comp in core["components"]:
+            adjust_all(comp)
+
+    # Step 7: Sort components by RM priority if needed
     for core in system_model["cores"]:
         if core["scheduler"] == "RM":
             core["components"].sort(key=lambda comp: comp.get("priority", float("inf")))
