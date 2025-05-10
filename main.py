@@ -8,7 +8,7 @@ def main():
     ################################################################
     # 1) test case folder here:
     ################################################################
-    TEST_CASE_FOLDER = "test_cases/1-tiny-test-case" #BDR false
+    #TEST_CASE_FOLDER = "test_cases/1-tiny-test-case" #BDR false, prm false here
     #TEST_CASE_FOLDER = "test_cases/2-small-test-case" # correcvt, true
     #TEST_CASE_FOLDER = "test_cases/3-medium-test-case"
     #TEST_CASE_FOLDER = "test_cases/4-large-test-case" #sim false, one missed
@@ -16,8 +16,8 @@ def main():
     #TEST_CASE_FOLDER = "test_cases/6-gigantic-test-case"
     #TEST_CASE_FOLDER = "test_cases/7-unschedulable-test-case"
     #TEST_CASE_FOLDER = "test_cases/8-unschedulable-test-case"
-    #TEST_CASE_FOLDER = "test_cases/9-unschedulable-test-case" #true to all
-    #TEST_CASE_FOLDER = "test_cases/10-unschedulable-test-case"
+    #TEST_CASE_FOLDER = "test_cases/9-unschedulable-test-case" #true to all, prm all true wrong
+    TEST_CASE_FOLDER = "test_cases/10-unschedulable-test-case"
 
 
     OUTPUT_CSV = "solution.csv"

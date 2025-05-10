@@ -44,8 +44,8 @@ class BDRAnalysis:
     def analyze_component(self, comp, speed_factor):
         tasks = comp["tasks"]
         sched = comp["scheduler"].upper()
-        Q = comp["bdr_init"]["alpha"]
-        P = comp["bdr_init"]["delay"]
+        Q = comp["bdr_init"]["Q"]  # real budget
+        P = comp["bdr_init"]["P"]
         alpha = Q / P
         delta = 2 * (P - Q)
         dbf = dbf_edf if sched == "EDF" else dbf_fps

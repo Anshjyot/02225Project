@@ -43,8 +43,8 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False):
         for row in reader:
             comp_id = row["component_id"]
             scheduler = row["scheduler"].strip().upper()
-            alpha = float(row["budget"])
-            delay = float(row["period"])
+            Q_val = float(row["budget"])
+            P_val = float(row["period"])
             parent_core = row.get("core_id")
             parent_comp = row.get("parent_component") or None
             priority = int(row["priority"]) if row.get("priority") else None
@@ -52,7 +52,7 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False):
             comp_info[comp_id] = {
                 "name": comp_id,
                 "scheduler": scheduler,
-                "bdr_init": {"alpha": alpha, "delay": delay},
+                "bdr_init": {"Q": Q_val, "P": P_val},
                 "tasks": [],
                 "subcomponents": [],
                 "parent_core": parent_core,

@@ -18,8 +18,8 @@ class HierarchicalSimulator:
 
     def _init_component(self, cid, comp, speed):
         ckey = (cid, comp["name"])
-        Q = float(comp["bdr_init"]["alpha"])
-        P = float(comp["bdr_init"]["delay"])
+        Q = float(comp["bdr_init"]["Q"])
+        P = float(comp["bdr_init"]["P"])
         α = Q / P
         Δ = 2 * (P - Q)
         self.servers[ckey] = {"Q":Q, "P":P, "alpha":α, "delta":Δ,
