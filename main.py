@@ -3,6 +3,7 @@ from task_loader import load_csv_files
 from simulator import HierarchicalSimulator
 from bdr_analysis import BDRAnalysis
 from solution_writer import write_solution_csv
+from greedy_core_assigner import assign_components_to_cores
 
 def main():
     ################################################################
@@ -10,14 +11,14 @@ def main():
     ################################################################
     #TEST_CASE_FOLDER = "test_cases/1-tiny-test-case" #BDR false, prm false here
     #TEST_CASE_FOLDER = "test_cases/2-small-test-case" # correcvt, true
-    #TEST_CASE_FOLDER = "test_cases/3-medium-test-case"
+    TEST_CASE_FOLDER = "test_cases/3-medium-test-case"
     #TEST_CASE_FOLDER = "test_cases/4-large-test-case" #sim false, one missed
     #TEST_CASE_FOLDER = "test_cases/5-huge-test-case"
     #TEST_CASE_FOLDER = "test_cases/6-gigantic-test-case"
     #TEST_CASE_FOLDER = "test_cases/7-unschedulable-test-case"
     #TEST_CASE_FOLDER = "test_cases/8-unschedulable-test-case"
     #TEST_CASE_FOLDER = "test_cases/9-unschedulable-test-case" #true to all, prm all true wrong
-    TEST_CASE_FOLDER = "test_cases/10-unschedulable-test-case"
+    #TEST_CASE_FOLDER = "test_cases/10-unschedulable-test-case"
 
 
     OUTPUT_CSV = "solution.csv"
@@ -35,10 +36,17 @@ def main():
 
     print(f"📂 Running test case from: {TEST_CASE_FOLDER}")
 
+
     # 2) Load system model from CSV
     system_model = load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False)
 
-    # 3) Run hierarchical simulator
+    # 3) Optimize core assignments before simulation or analysis
+    assignments = assign_components_to_cores(system_model)
+    print("✅ Core assignment completed:")
+    for comp, core in assignments.items():
+        print(f"  Component {comp} → Core {core}")
+
+    # 4) Run hierarchical simulator
     simulator = HierarchicalSimulator(system_model)
     sim_results = simulator.run_simulation(simulation_time=1800.0, dt=0.1)
 
