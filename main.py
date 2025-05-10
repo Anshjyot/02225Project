@@ -36,7 +36,7 @@ def main():
     print(f"📂 Running test case from: {TEST_CASE_FOLDER}")
 
     # 2) Load system model from CSV
-    system_model = load_csv_files(tasks_csv, arch_csv, budgets_csv)
+    system_model = load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False)
 
     # 3) Run hierarchical simulator
     simulator = HierarchicalSimulator(system_model)

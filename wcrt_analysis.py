@@ -7,13 +7,14 @@ def compute_wcrt_rm(tasks: List[Dict], delta: float) -> Dict[str, float]:
     for i, task in enumerate(sorted_tasks):
         Ci = task["wcet"]
         Di = task["deadline"]
-        Ri = Ci + delta
+        J = task.get("comm_jitter", 0.0)
+        Ri = Ci + delta + J
         while True:
             interference = sum(
                 math.ceil(Ri / hp["period"]) * hp["wcet"]
                 for hp in sorted_tasks[:i]
             )
-            R_next = Ci + delta + interference
+            R_next = Ci + delta + J + interference  # ✅ include J here too!
             if abs(R_next - Ri) < 1e-6:
                 break
             if R_next > Di:
@@ -41,10 +42,11 @@ def compute_wcrt_edf(tasks: List[Dict], alpha: float, delta: float) -> Dict[str,
     sorted_tasks = sorted(tasks, key=lambda x: x["deadline"])  # EDF priority
     for i, task in enumerate(sorted_tasks):
         Di = task["deadline"]
-        max_t = max(t["deadline"] for t in sorted_tasks[:i+1]) * 2
+        J = task.get("comm_jitter", 0.0)  # <- add this
+        max_t = max(t["deadline"] for t in sorted_tasks[:i + 1]) * 2
         R = float("inf")
-        for t in range(int(Di), int(max_t) + 1):
-            demand = dbf_edf(sorted_tasks[:i+1], t)
+        for t in range(int(Di + J), int(max_t) + 1):  # <- apply jitter here
+            demand = dbf_edf(sorted_tasks[:i + 1], t - J)  # <- shift demand by jitter
             supply = max(0.0, alpha * (t - delta))
             if demand <= supply + 1e-9:
                 R = t

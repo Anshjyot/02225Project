@@ -1,6 +1,20 @@
 import csv
+import os
 
-def load_csv_files(tasks_csv, arch_csv, budgets_csv):
+def load_comm_links(filepath):
+    comm_map = {}
+    if not os.path.exists(filepath):
+        return comm_map
+    with open(filepath, newline='') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            dst = row["destination_task"]
+            delay = float(row["delay"])
+            # only track max delay per destination task
+            comm_map[dst] = max(comm_map.get(dst, 0.0), delay)
+    return comm_map
+
+def load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False):
     """
     Reads tasks, architecture (cores), and budgets from CSV files.
     Builds a hierarchical system model for simulation and analysis.
@@ -130,5 +144,18 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv):
     for core in system_model["cores"]:
         if core["scheduler"] == "RM":
             core["components"].sort(key=lambda comp: comp.get("priority", float("inf")))
+
+    comm_map = {}
+    if use_comm_links:
+        comm_links_path = os.path.join(os.path.dirname(tasks_csv), "comm_links.csv")
+        comm_map = load_comm_links(comm_links_path)
+
+    for core in system_model["cores"]:
+        for comp in core["components"]:
+            for task in comp["tasks"]:
+                task["comm_jitter"] = comm_map.get(task["id"], 0.0)
+
+    if comm_map:
+        print(f"📡 Loaded communication delays for {len(comm_map)} tasks from comm_links.csv")
 
     return system_model
