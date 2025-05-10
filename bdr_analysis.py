@@ -24,6 +24,8 @@ class BDRAnalysis:
 
     @staticmethod
     def sbf_prm(Q, P, t):
+        if Q == P:
+            return t  # full CPU
         return max(0.0, math.floor(t / P) * Q)
 
     @staticmethod

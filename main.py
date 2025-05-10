@@ -4,14 +4,15 @@ from simulator import HierarchicalSimulator
 from bdr_analysis import BDRAnalysis
 from solution_writer import write_solution_csv
 from greedy_core_assigner import assign_components_to_cores
+from resource_tuner import tune_system
 
 def main():
     ################################################################
     # 1) test case folder here:
     ################################################################
-    #TEST_CASE_FOLDER = "test_cases/1-tiny-test-case" #BDR false, prm false here
+    TEST_CASE_FOLDER = "test_cases/1-tiny-test-case" #BDR false, prm false here
     #TEST_CASE_FOLDER = "test_cases/2-small-test-case" # correcvt, true
-    TEST_CASE_FOLDER = "test_cases/3-medium-test-case"
+    #TEST_CASE_FOLDER = "test_cases/3-medium-test-case"
     #TEST_CASE_FOLDER = "test_cases/4-large-test-case" #sim false, one missed
     #TEST_CASE_FOLDER = "test_cases/5-huge-test-case"
     #TEST_CASE_FOLDER = "test_cases/6-gigantic-test-case"
@@ -22,7 +23,7 @@ def main():
 
 
     OUTPUT_CSV = "solution.csv"
-
+    USE_TUNER = False;
 
     tasks_csv = os.path.join(TEST_CASE_FOLDER, "tasks.csv")
     arch_csv = os.path.join(TEST_CASE_FOLDER, "architecture.csv")
@@ -39,6 +40,13 @@ def main():
 
     # 2) Load system model from CSV
     system_model = load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False)
+
+    if USE_TUNER:
+        print("\n🔧 Running resource-model tuner …")
+        tune_system(system_model)
+        print("🔧 Tuning finished.\n")
+    else:
+        print("\n🔧 Skipping resource-model tuner.\n")
 
     # 3) Optimize core assignments before simulation or analysis
     assignments = assign_components_to_cores(system_model)

@@ -17,6 +17,7 @@ def write_solution_csv(task_stats, analysis_results, task_to_comp, filename="sol
             for tid, wcrt in data["bdr"]["wcrt"].items():  # or data["prm"]["wcrt"] if you prefer that
                 wcrt_lookup[tid] = wcrt
 
+
     # Accumulate all tasks grouped by component to compute per-component schedulability (simulator-based)
     comp_task_ids = {}
     for task_id, (core_id, comp_id) in task_to_comp.items():
