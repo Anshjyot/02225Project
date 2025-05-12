@@ -10,9 +10,4 @@ def dbf_edf(tasks, t):
     return demand
 
 def dbf_fps(tasks, t):
-    """
-    Demand‑bound function for a fixed‑priority (RM/FPS) task set.
-    For correctness we *must* include every task – priority
-    does not change the DBF expression.
-    """
-    return dbf_edf(tasks, t)   # <<< early‑exit shortcut removed
+    return dbf_edf(tasks, t)

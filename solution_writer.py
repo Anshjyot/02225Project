@@ -1,19 +1,14 @@
 import csv
 
 def write_solution_csv(task_stats, analysis_results, task_to_comp, filename="solution.csv"):
-    """
-    Writes a CSV file with detailed simulation + analysis results.
-    
-    Columns:
-    task_name, component_id, task_schedulable, avg_response_time, max_response_time, component_schedulable
-    """
-    # Build component-level schedulability map from analysis
     comp_schedulable = {}
+    wcrt_lookup = {}
     for core in analysis_results:
         for comp, data in analysis_results[core].items():
-            comp_schedulable[(core, comp)] = data["schedulable"]
+            comp_schedulable[(core, comp)] = data["bdr"]["schedulable"]
+            for tid, wcrt in data["bdr"]["wcrt"].items():
+                wcrt_lookup[tid] = wcrt
 
-    # Accumulate all tasks grouped by component to compute per-component schedulability (simulator-based)
     comp_task_ids = {}
     for task_id, (core_id, comp_id) in task_to_comp.items():
         key = (core_id, comp_id)
@@ -27,6 +22,8 @@ def write_solution_csv(task_stats, analysis_results, task_to_comp, filename="sol
             "task_schedulable",
             "avg_response_time",
             "max_response_time",
+            "wcrt",
+            "violates_deadline",
             "component_schedulable"
         ])
         for task_id, stats in task_stats.items():
@@ -41,11 +38,15 @@ def write_solution_csv(task_stats, analysis_results, task_to_comp, filename="sol
             comp_sched_sim = all(
                 task_stats[tid]["missed_deadlines"] == 0 for tid in all_comp_tasks
             )
+            wcrt = wcrt_lookup.get(task_id, -1)
+            violates = 1 if wcrt > stats.get("deadline", float("inf")) else 0
             writer.writerow([
                 task_id,
                 comp_id,
                 task_sched,
                 f"{avg_resp:.2f}",
                 f"{stats['max_resp_time']:.2f}",
+                f"{wcrt:.2f}",
+                violates,
                 1 if comp_sched_sim else 0
             ])
