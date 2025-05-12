@@ -1,24 +1,14 @@
 import csv
 
 def write_solution_csv(task_stats, analysis_results, task_to_comp, filename="solution.csv"):
-    """
-    Writes a CSV file with detailed simulation + analysis results.
-
-    Columns:
-    task_name, component_id, task_schedulable, avg_response_time,
-    max_response_time, wcrt, violates_deadline, component_schedulable
-    """
-    # Build component-level schedulability map from analysis
     comp_schedulable = {}
     wcrt_lookup = {}
     for core in analysis_results:
         for comp, data in analysis_results[core].items():
-            comp_schedulable[(core, comp)] = data["bdr"]["schedulable"]  # or "prm", if preferred
-            for tid, wcrt in data["bdr"]["wcrt"].items():  # or data["prm"]["wcrt"] if you prefer that
+            comp_schedulable[(core, comp)] = data["bdr"]["schedulable"]
+            for tid, wcrt in data["bdr"]["wcrt"].items():
                 wcrt_lookup[tid] = wcrt
 
-
-    # Accumulate all tasks grouped by component to compute per-component schedulability (simulator-based)
     comp_task_ids = {}
     for task_id, (core_id, comp_id) in task_to_comp.items():
         key = (core_id, comp_id)

@@ -1,7 +1,6 @@
 import math
 from functools import reduce
 from math import lcm
-
 from dbf_utils import dbf_edf, dbf_fps
 from wcrt_analysis import compute_wcrt, compute_wcrt_edf, compute_wcrt_rm
 
@@ -25,7 +24,7 @@ class BDRAnalysis:
     @staticmethod
     def sbf_prm(Q, P, t):
         if Q == P:
-            return t  # full CPU
+            return t
         return max(0.0, math.floor(t / P) * Q)
 
     @staticmethod
@@ -46,7 +45,7 @@ class BDRAnalysis:
     def analyze_component(self, comp, speed_factor):
         tasks = comp["tasks"]
         sched = comp["scheduler"].upper()
-        Q = comp["bdr_init"]["Q"]  # real budget
+        Q = comp["bdr_init"]["Q"]
         P = comp["bdr_init"]["P"]
         alpha = Q / P
         delta = 2 * (P - Q)
@@ -71,9 +70,9 @@ class BDRAnalysis:
                 prm_ok = False
                 break
         if sched == "EDF":
-            prm_wcrt = compute_wcrt_edf(tasks, alpha, 0.0)  # delta = 0 for PRM (no delay model)
+            prm_wcrt = compute_wcrt_edf(tasks, alpha, 0.0)
         else:
-            prm_wcrt = compute_wcrt_rm(tasks, 0.0)  # no jitter for PRM
+            prm_wcrt = compute_wcrt_rm(tasks, 0.0)
 
         result = {
             "bdr": {

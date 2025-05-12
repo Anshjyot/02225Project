@@ -2,13 +2,6 @@ from typing import Dict, Any
 
 
 def assign_components_to_cores(system_model: Dict[str, Any]) -> Dict[str, str]:
-    """
-    Assigns components to cores using a greedy heuristic based on BDR alpha and core speed.
-    Updates system_model in-place by modifying component['parent_core'].
-
-    Returns:
-        Dict mapping component names to assigned core IDs (for logging/debugging).
-    """
     components = []
     core_speeds = {}
     for core in system_model["cores"]:
@@ -24,8 +17,6 @@ def assign_components_to_cores(system_model: Dict[str, Any]) -> Dict[str, str]:
 
     core_loads = {core_id: 0.0 for core_id in core_speeds}
     assignments = {}
-
-    # Sort components by descending alpha
     components.sort(key=lambda c: -c["alpha"])
 
     for comp in components:

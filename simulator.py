@@ -1,9 +1,7 @@
-import math
 from typing import Dict, List, Tuple, Any
 
 
 class HierarchicalSimulator:
-    """Hierarchical real‑time simulator enforcing per-core BDR interfaces with optional reclaiming."""
     def __init__(self, system_model: Dict[str, Any]):
         self.system_model = system_model
         self.task_states: Dict[Tuple[str,str], List[Dict[str,Any]]] = {}

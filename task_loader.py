@@ -10,17 +10,10 @@ def load_comm_links(filepath):
         for row in reader:
             dst = row["destination_task"]
             delay = float(row["delay"])
-            # only track max delay per destination task
             comm_map[dst] = max(comm_map.get(dst, 0.0), delay)
     return comm_map
 
 def load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False):
-    """
-    Reads tasks, architecture (cores), and budgets from CSV files.
-    Builds a hierarchical system model for simulation and analysis.
-    """
-
-    # Step 1: Parse architecture.csv (core specs + top-level scheduler)
     cores_info = {}
     with open(arch_csv, "r") as f:
         reader = csv.DictReader(f)
@@ -35,7 +28,6 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False):
                 "components": []
             }
 
-    # Step 2: Parse budgets.csv (components and their mapping to cores or parents)
     comp_info = {}
     children_map = {}
     with open(budgets_csv, "r") as f:
@@ -63,7 +55,6 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False):
             if parent_comp:
                 children_map.setdefault(parent_comp, []).append(comp_id)
 
-    # Step 3: Parse tasks.csv (tasks inside each component)
     with open(tasks_csv, "r") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -92,7 +83,7 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False):
                 "type": ttype,
             })
 
-    # Link subcomponents
+
     for parent, children in children_map.items():
         for cid in children:
             comp_info[parent]["subcomponents"].append(comp_info[cid])
@@ -102,7 +93,7 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False):
         task_ids = [t["id"] for t in comp["tasks"]]
         print(f"Component {comp_id} (Scheduler: {comp['scheduler']}) has tasks: {task_ids}")
 
-    # Step 4: Build component-core hierarchy
+
     for cinfo in comp_info.values():
         if not cinfo["parent_core"]:
             continue
@@ -119,12 +110,10 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False):
             "subcomponents": cinfo["subcomponents"]
         })
 
-    # Step 5: Construct the full system model
     system_model = {
         "cores": list(cores_info.values())
     }
 
-    # Step 6: Adjust WCET based on core speed
     for core in system_model["cores"]:
         speed = core["speed_factor"]
         def adjust_wcet(tasks):
@@ -140,7 +129,6 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False):
         for comp in core["components"]:
             adjust_all(comp)
 
-    # Step 7: Sort components by RM priority if needed
     for core in system_model["cores"]:
         if core["scheduler"] == "RM":
             core["components"].sort(key=lambda comp: comp.get("priority", float("inf")))
