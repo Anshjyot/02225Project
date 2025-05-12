@@ -8,7 +8,7 @@ from resource_tuner import tune_system
 
 def main():
     ################################################################
-    # 1) test case folder here:
+    # 1) Test Case folder here:
     ################################################################
 
     TEST_CASE_FOLDER = "test_cases/1-tiny-test-case"
@@ -22,9 +22,16 @@ def main():
     #TEST_CASE_FOLDER = "test_cases/9-unschedulable-test-case"
     #TEST_CASE_FOLDER = "test_cases/10-unschedulable-test-case"
 
+    ################################################################
+    # 1) CUSTOM TEST CASES
+    ################################################################
+    #TEST_CASE_FOLDER = "test_cases/custom_cases/1-custom-test-case"
+    #TEST_CASE_FOLDER = "test_cases/custom_cases/2-custom-test-case"
+
 
     OUTPUT_CSV = "solution.csv"
     USE_TUNER = False;
+    USE_CORE_ASSIGNER = False;
 
     tasks_csv = os.path.join(TEST_CASE_FOLDER, "tasks.csv")
     arch_csv = os.path.join(TEST_CASE_FOLDER, "architecture.csv")
@@ -48,10 +55,13 @@ def main():
     else:
         print("\n Skipping resource-model tuner.\n")
 
-    assignments = assign_components_to_cores(system_model)
-    print(" Core assignment completed:")
-    for comp, core in assignments.items():
-        print(f"  Component {comp} → Core {core}")
+    if USE_CORE_ASSIGNER:
+        assignments = assign_components_to_cores(system_model)
+        print(" Core assignment completed:")
+        for comp, core in assignments.items():
+            print(f"  Component {comp} → Core {core}")
+    else:
+        print(" Using static core assignments from budgets.csv.")
 
     simulator = HierarchicalSimulator(system_model)
     sim_results = simulator.run_simulation(simulation_time=1800.0, dt=0.1)

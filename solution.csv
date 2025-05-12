@@ -1,3 +1,11 @@
 task_name,component_id,task_schedulable,avg_response_time,max_response_time,wcrt,violates_deadline,component_schedulable
-Task_0,Camera_Sensor,1,22.60,22.60,22.58,0,1
-Task_1,Camera_Sensor,1,98.40,98.40,98.39,0,1
+Task_C1,Camera_Module,1,5.20,17.00,20.00,0,1
+Task_C2,Camera_Module,1,10.35,22.00,40.00,0,1
+Task_N1,Navigation_Module,1,7.00,32.40,35.00,0,1
+Task_N2,Navigation_Module,1,10.69,35.60,70.00,0,1
+Task_CN1,Control_Module,1,1.94,9.90,9.11,0,1
+Task_CN2,Control_Module,1,2.93,13.60,11.33,0,1
+Task_F1,Fusion_Module,1,5.15,28.70,30.00,0,1
+Task_F2,Fusion_Module,1,7.28,30.20,60.00,0,1
+Task_S1,Sensor_Module,1,2.13,19.90,18.91,0,1
+Task_S2,Sensor_Module,1,6.10,25.40,21.64,0,1

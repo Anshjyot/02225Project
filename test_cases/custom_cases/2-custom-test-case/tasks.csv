@@ -1,0 +1,11 @@
+task_name,wcet,period,component_id,priority
+Task_C1,2,20,Camera_Module,
+Task_C2,2,40,Camera_Module,
+Task_F1,3,30,Fusion_Module,
+Task_F2,1,60,Fusion_Module,
+Task_CN1,1,10,Control_Module,0
+Task_CN2,1,15,Control_Module,1
+Task_S1,1,20,Sensor_Module,0
+Task_S2,2,40,Sensor_Module,1
+Task_N1,4,35,Navigation_Module,
+Task_N2,2,70,Navigation_Module,

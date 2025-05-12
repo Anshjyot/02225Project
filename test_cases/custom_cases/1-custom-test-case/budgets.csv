@@ -1,0 +1,6 @@
+component_id,scheduler,budget,period,core_id,priority
+Sensor_Module,RM,3,12,Core_1,0
+Vision_Module,EDF,5,25,Core_2,
+Control_Module,RM,4,15,Core_1,1
+Telemetry_Module,EDF,2,30,Core_2,
+AI_Planner,EDF,6,35,Core_3,

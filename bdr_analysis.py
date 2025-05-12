@@ -74,6 +74,12 @@ class BDRAnalysis:
         else:
             prm_wcrt = compute_wcrt_rm(tasks, 0.0)
 
+        for task in tasks:
+            if prm_wcrt[task["id"]] > task["deadline"]:
+                prm_ok = False
+            if bdr_wcrt[task["id"]] > task["deadline"]:
+                bdr_ok = False
+
         result = {
             "bdr": {
                 "alpha": alpha,

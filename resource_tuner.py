@@ -29,7 +29,7 @@ def tune_system(system_model):
             _collect(c, comps)
 
         for comp in comps:
-            print(f"🔍 Tuning component: {comp['name']}")
+            print(f" Tuning component: {comp['name']}")
 
             Q0 = comp["bdr_init"]["Q"]
             P0 = comp["bdr_init"]["P"]

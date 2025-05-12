@@ -1,0 +1,6 @@
+component_id,scheduler,budget,period,core_id,priority
+Camera_Module,EDF,4,10,Core_A,
+Navigation_Module,EDF,22,35,Core_A,
+Control_Module,RM,6,10,Core_B,0
+Fusion_Module,EDF,18,30,Core_C,
+Sensor_Module,RM,9,18,Core_C,1

@@ -144,6 +144,6 @@ def load_csv_files(tasks_csv, arch_csv, budgets_csv, use_comm_links=False):
                 task["comm_jitter"] = comm_map.get(task["id"], 0.0)
 
     if comm_map:
-        print(f"📡 Loaded communication delays for {len(comm_map)} tasks from comm_links.csv")
+        print(f" Loaded communication delays for {len(comm_map)} tasks from comm_links.csv")
 
     return system_model
